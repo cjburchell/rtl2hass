@@ -287,7 +287,7 @@ def publish_config(mqttc, topic, manmodel, instance, channel, mapping):
 
     config = mapping["config"].copy()
     config["state_topic"] = "/".join([MQTT_TOPIC, manmodel, instance, channel, topic])
-    config["name"] = " ".join([manmodel.replace("-", " "), instance, object_suffix])
+    config["name"] = "".join([manmodel.replace("-", " "), instance, object_suffix])
     config["unique_id"] = "".join(["rtl433", device_type, instance, object_suffix])
     config["availability_topic"] = "/".join([MQTT_TOPIC, "status"])
 
@@ -297,7 +297,7 @@ def publish_config(mqttc, topic, manmodel, instance, channel, mapping):
 
     device = {}
     device["identifiers"] = instance
-    device["name"] = instance
+    device["name"] = "".join([manmodel.replace("-", " "), instance])
     device["model"] = model
     device["manufacturer"] = manufacturer
     config["device"] = device
