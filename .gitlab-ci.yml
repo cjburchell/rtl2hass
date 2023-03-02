@@ -1,0 +1,42 @@
+variables:
+  VERSION: 1.2
+  IMAGE_TAG: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_PIPELINE_ID
+
+stages:
+  - build
+
+docker-build-master:
+  inherit:
+    default: false
+  needs: []
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - docker build --pull -t "$CI_REGISTRY_IMAGE" .
+    - docker push $CI_REGISTRY_IMAGE
+    - docker tag $CI_REGISTRY_IMAGE $CI_REGISTRY_IMAGE:$VERSION
+    - docker push $CI_REGISTRY_IMAGE:$VERSION
+    - docker tag $CI_REGISTRY_IMAGE $IMAGE_TAG
+    - docker push $IMAGE_TAG
+  only:
+    - master
+
+docker-build-server:
+  image: docker:latest
+  needs: []
+  inherit:
+    default: false
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - docker build --pull -t $IMAGE_TAG .
+    - docker push $IMAGE_TAG
+  except:
+    - master

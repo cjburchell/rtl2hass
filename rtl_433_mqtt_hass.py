@@ -322,6 +322,8 @@ def bridge_event_to_hass(mqttc, topic, data):
 
     if "channel" in data:
         channel = str(data["channel"])
+    else:
+        channel = "0"
 
     # check if ID is whitelisted
     # need code here to parse list of whitelisted IDs from environment variable
