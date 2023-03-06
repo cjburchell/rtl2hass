@@ -1,42 +1,52 @@
-variables:
-  VERSION: 1.2.1
-  IMAGE_TAG: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_PIPELINE_ID
-
 stages:
+  - style
   - build
 
-docker-build-master:
-  inherit:
-    default: false
-  needs: []
-  image: docker:latest
-  stage: build
-  services:
-    - docker:dind
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+docker-lint:
+  stage: style
+  image: hadolint/hadolint:latest-debian
   script:
-    - docker build --pull -t "$CI_REGISTRY_IMAGE" .
-    - docker push $CI_REGISTRY_IMAGE
-    - docker tag $CI_REGISTRY_IMAGE $CI_REGISTRY_IMAGE:$VERSION
-    - docker push $CI_REGISTRY_IMAGE:$VERSION
-    - docker tag $CI_REGISTRY_IMAGE $IMAGE_TAG
-    - docker push $IMAGE_TAG
-  only:
-    - master
+    - hadolint Dockerfile | tee -a  server_docker_lint.txt
+  artifacts:
+    paths:
+      - server_docker_lint.txt
+    expire_in: 1 week
 
-docker-build-server:
+.publish_docker:
+  needs: [ ]
   image: docker:latest
-  needs: []
-  inherit:
-    default: false
   stage: build
   services:
     - docker:dind
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
-    - docker build --pull -t $IMAGE_TAG .
-    - docker push $IMAGE_TAG
-  except:
-    - master
+    - docker build --no-cache --pull -t $TAG .
+    - docker push $TAG
+
+
+publish-docker:
+  extends: .publish_docker
+  variables:
+    TAG: $CI_REGISTRY_IMAGE:$CI_PIPELINE_ID
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH == "master"
+
+
+publish-docker-tag:
+  extends: .publish_docker
+  variables:
+    TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME-$CI_PIPELINE_ID
+  rules:
+    - if: $CI_COMMIT_TAG
+
+build-docker:
+  extends: .publish_docker
+  script:
+    - docker build --no-cache --pull .
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH != "master"
