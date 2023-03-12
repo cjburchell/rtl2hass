@@ -297,7 +297,7 @@ def publish_config(mqttc, topic, manmodel, instance, channel, mapping):
 
     device = {}
     device["identifiers"] = instance
-    device["name"] = "".join([manmodel.replace("-", " "), instance])
+    device["name"] = "".join([manmodel.replace("-", " "), " ", instance])
     device["model"] = model
     device["manufacturer"] = manufacturer
     config["device"] = device

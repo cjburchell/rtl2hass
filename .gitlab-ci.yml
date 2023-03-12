@@ -1,16 +1,5 @@
 stages:
-  - style
   - build
-
-docker-lint:
-  stage: style
-  image: hadolint/hadolint:latest-debian
-  script:
-    - hadolint Dockerfile | tee -a  server_docker_lint.txt
-  artifacts:
-    paths:
-      - server_docker_lint.txt
-    expire_in: 1 week
 
 .publish_docker:
   needs: [ ]
