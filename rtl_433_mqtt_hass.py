@@ -14,10 +14,10 @@
 from __future__ import print_function
 from __future__ import with_statement
 
-import os
-import socket
-import time
 import json
+import os
+import time
+
 import paho.mqtt.client as mqtt
 
 MQTT_HOST = os.environ['MQTT_HOST']
@@ -25,6 +25,8 @@ MQTT_PORT = os.environ['MQTT_PORT']
 MQTT_USERNAME = os.environ['MQTT_USERNAME']
 MQTT_PASSWORD = os.environ['MQTT_PASSWORD']
 MQTT_TOPIC = os.environ['MQTT_TOPIC']
+
+DISCOVERY_WHITELIST_MODELS = os.environ['DISCOVERY_WHITELIST_MODELS']
 DISCOVERY_PREFIX = os.environ['DISCOVERY_PREFIX']
 DISCOVERY_INTERVAL = os.environ['DISCOVERY_INTERVAL']
 
@@ -293,15 +295,15 @@ def publish_config(mqttc, topic, manmodel, instance, channel, mapping):
 
     # add Home Assistant device info
 
-    manufacturer,model = manmodel.split("-", 1)
+    manufacturer, model = manmodel.split("-", 1)
 
-    device = {}
-    device["identifiers"] = instance
-    device["name"] = "".join([manmodel.replace("-", " "), " ", instance])
-    device["model"] = model
-    device["manufacturer"] = manufacturer
+    device = {
+        "identifiers": instance,
+        "name": "".join([manmodel.replace("-", " "), " ", instance]),
+        "model": model,
+        "manufacturer": manufacturer}
     config["device"] = device
-    
+
     mqttc.publish(path, json.dumps(config), qos=0, retain=True)
     print(path, " : ", json.dumps(config))
 
@@ -328,6 +330,10 @@ def bridge_event_to_hass(mqttc, topic, data):
     # check if ID is whitelisted
     # need code here to parse list of whitelisted IDs from environment variable
     # log if non-whitelisted ID is detected so new devices can be found easily
+
+    whitelist = DISCOVERY_WHITELIST_MODELS.split(",", 1)
+    if manmodel not in whitelist:
+        return
 
     # detect known attributes
     for key in data.keys():
