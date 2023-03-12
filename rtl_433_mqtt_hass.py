@@ -26,7 +26,7 @@ MQTT_USERNAME = os.environ['MQTT_USERNAME']
 MQTT_PASSWORD = os.environ['MQTT_PASSWORD']
 MQTT_TOPIC = os.environ['MQTT_TOPIC']
 
-DISCOVERY_WHITELIST_MODELS = os.environ['DISCOVERY_WHITELIST_MODELS']
+DISCOVERY_WHITELIST_MODELS = os.environ['DISCOVERY_WHITELIST_MODELS'].split(",")
 DISCOVERY_PREFIX = os.environ['DISCOVERY_PREFIX']
 DISCOVERY_INTERVAL = os.environ['DISCOVERY_INTERVAL']
 
@@ -314,12 +314,22 @@ def bridge_event_to_hass(mqttc, topic, data):
     if "model" not in data:
         # not a device event
         return
-    manmodel = sanitize(data["model"])
+    manufacture_and_model = sanitize(data["model"])
+
+    whitelist = DISCOVERY_WHITELIST_MODELS
+    if manufacture_and_model not in whitelist:
+        print("Unknown Device: ", manufacture_and_model)
+        return
 
     if "id" in data:
         instance = str(data["id"])
-    if not instance:
+        if not instance:
+            # no unique device identifier
+            print("Missing Id: ", manufacture_and_model)
+            return
+    else:
         # no unique device identifier
+        print("Missing Id: ", manufacture_and_model)
         return
 
     if "channel" in data:
@@ -331,14 +341,10 @@ def bridge_event_to_hass(mqttc, topic, data):
     # need code here to parse list of whitelisted IDs from environment variable
     # log if non-whitelisted ID is detected so new devices can be found easily
 
-    whitelist = DISCOVERY_WHITELIST_MODELS.split(",", 1)
-    if manmodel not in whitelist:
-        return
-
     # detect known attributes
     for key in data.keys():
         if key in mappings:
-            publish_config(mqttc, key, manmodel, instance, channel, mappings[key])
+            publish_config(mqttc, key, manufacture_and_model, instance, channel, mappings[key])
 
 
 def rtl_433_bridge():
