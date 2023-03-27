@@ -358,6 +358,8 @@ def rtl_433_bridge():
     mqttc.connect_async(MQTT_HOST, MQTT_PORT, 60)
     mqttc.loop_start()
 
+    print(DISCOVERY_WHITELIST_MODELS)
+
     while True:
         time.sleep(1)
 
