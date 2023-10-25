@@ -1,5 +1,5 @@
 
-FROM python:3.9.18
+FROM python:latest
 
 #
 # Define environment variables
@@ -33,9 +33,10 @@ COPY rtl.blacklist.conf /etc/modprobe.d/rtl.blacklist.conf
 #
 # Copy scripts, make executable
 #
-COPY rtl_433_mqtt_hass.py /
+COPY entry.sh rtl_433_mqtt_hass.py /scripts/
+RUN chmod +x /scripts/entry.sh
 
 #
 # Execute entry script
 #
-ENTRYPOINT [ "python3", "rtl_433_mqtt_hass.py" ]
+ENTRYPOINT [ "/scripts/entry.sh" ]
